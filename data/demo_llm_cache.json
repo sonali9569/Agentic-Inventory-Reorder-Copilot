@@ -1,0 +1,263 @@
+{
+  "db1175d3fbb92c29": {
+    "recommendations": [
+      {
+        "item_id": "I016",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window with uplift x14.0 and recent demand 15.63x its usual rate."
+      },
+      {
+        "item_id": "I008",
+        "urgency": "medium",
+        "rationale": "Currently inside the Raksha Bandhan window with uplift x1.4."
+      },
+      {
+        "item_id": "I009",
+        "urgency": "medium",
+        "rationale": "Currently inside the Raksha Bandhan window with uplift x1.4."
+      },
+      {
+        "item_id": "I012",
+        "urgency": "medium",
+        "rationale": "Currently inside the Raksha Bandhan window with uplift x1.4."
+      },
+      {
+        "item_id": "I015",
+        "urgency": "medium",
+        "rationale": "Currently inside the Raksha Bandhan window with uplift x1.4."
+      },
+      {
+        "item_id": "I020",
+        "urgency": "medium",
+        "rationale": "Recent demand is running 1.54x its usual rate with no festival involved."
+      },
+      {
+        "item_id": "I017",
+        "urgency": "low",
+        "rationale": "Recent demand is at 0.0x its usual rate with no festival involved."
+      },
+      {
+        "item_id": "I021",
+        "urgency": "low",
+        "rationale": "No festival or recent demand shift noted beyond stockout risk."
+      }
+    ]
+  },
+  "4e0f3dbb8f2bc569": {
+    "kind": "question",
+    "command_action": null,
+    "reject_reason": "not_needed_now"
+  },
+  "5ac7cbf9140d909c": {
+    "answer": "Your Rakhi Set is flagged because you have no stock left and the festival is causing much higher demand right now."
+  },
+  "670c8f5d70d2287b": {
+    "kind": "question",
+    "command_action": null,
+    "reject_reason": "not_needed_now"
+  },
+  "a68c632fa7b44cfa": {
+    "answer": "Your umbrella is running out fast because recent demand is much higher than usual."
+  },
+  "b7a0ccad46737a09": {
+    "kind": "question",
+    "command_action": null,
+    "reject_reason": "not_needed_now"
+  },
+  "12223238d4d9101a": {
+    "answer": "Your toothpaste is running low (only 1 unit) and Raksha Bandhan is driving higher demand, so the system recommends reordering now."
+  },
+  "9a2e4fc0274c7b38": {
+    "kind": "question",
+    "command_action": null,
+    "reject_reason": "not_needed_now"
+  },
+  "195556b844e078ce": {
+    "answer": "Yes, you need to order more toothpaste now. The system recommends reordering 38 units because you only have 1 unit left."
+  },
+  "b051395b949eda9f": {
+    "kind": "command",
+    "command_action": null,
+    "reject_reason": "not_needed_now"
+  },
+  "34ea41606120334b": {
+    "recommendations": [
+      {
+        "item_id": "I008",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I009",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I011",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I015",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I016",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window despite recent demand at 0.0x its usual rate.",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I020",
+        "urgency": "medium",
+        "rationale": "Recent demand is running 1.77x its usual rate (no festival involved).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I022",
+        "urgency": "medium",
+        "rationale": "Recent demand is running 1.68x its usual rate (no festival involved).",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I021",
+        "urgency": "low",
+        "rationale": "No active festival or demand shift mentioned.",
+        "confidence": 1.0
+      }
+    ]
+  },
+  "103068fa399c093b": {
+    "answer": "Your Rakhi Set is flagged because there are 0 units in stock right now, which means it's running out."
+  },
+  "4fbcd098beb0698f": {
+    "answer": "Recent demand is 1.77 times faster than usual."
+  },
+  "cfd32c3310d2e681": {
+    "answer": "The system recommends reordering now because your toothpaste is running low (only 26 units left) and Raksha Bandhan is driving higher demand."
+  },
+  "88570b529dfdf82f": {
+    "answer": "Yes, you need to order 10 units now. Raksha Bandhan is driving higher sales, and your stock is low."
+  },
+  "cf880401ed0fdcde": {
+    "recommendations": [
+      {
+        "item_id": "I008",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I009",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I011",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I015",
+        "urgency": "high",
+        "rationale": "Currently inside the Raksha Bandhan window (uplift x1.4)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I020",
+        "urgency": "medium",
+        "rationale": "Recent demand is running 1.77x its usual rate (no festival involved)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I022",
+        "urgency": "medium",
+        "rationale": "Recent demand is running 1.68x its usual rate (no festival involved)",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I016",
+        "urgency": "low",
+        "rationale": "Recent demand is running at only 0.0x its usual rate",
+        "confidence": 1.0
+      },
+      {
+        "item_id": "I021",
+        "urgency": "low",
+        "rationale": "No specific demand or festival context provided",
+        "confidence": 1.0
+      }
+    ]
+  },
+  "4d41d497e0e82549": {
+    "answer": "Your Rakhi Set is flagged because it has 0 units in stock, meaning it's running low."
+  },
+  "7ae7f6a0e28747bf": {
+    "answer": "Your umbrella stock is low because it's selling much faster than usual right now."
+  },
+  "8332617f06af29f8": {
+    "answer": "The system recommends reordering now because your toothpaste stock is low (only 26 units left) and Raksha Bandhan is driving higher demand."
+  },
+  "13390c1d5433eb14": {
+    "answer": "Yes, you need to order now because Raksha Bandhan is driving higher demand for toothpaste."
+  },
+  "dc7f68ab0ad2d489": {
+    "critiques": [
+      {
+        "item_id": "I008",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I009",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I011",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I015",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I020",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I022",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I016",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      },
+      {
+        "item_id": "I021",
+        "is_supported": true,
+        "confidence": 0.96,
+        "issue": null
+      }
+    ]
+  }
+}

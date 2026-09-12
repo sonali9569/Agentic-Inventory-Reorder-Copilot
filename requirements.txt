@@ -1,0 +1,29 @@
+# Pinned with upper bounds on purpose. The project's central claim is that the
+# backtest reproduces exactly; unpinned majors quietly break that. Bump
+# deliberately and re-run `python3 src/run_backtest.py` when you do.
+#
+# langgraph/langchain-core were bumped from the original 0.x pins after the
+# 0.x range silently pulled in an old langchain-core that conflicted with an
+# already-installed newer langgraph on this machine (langchain-groq's 0.x
+# line depends on the pre-1.0 langchain-core). Re-verified: 183/183 tests
+# pass against these versions.
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+prophet>=1.1.5,<2.0
+langgraph>=1.0,<2.0
+langchain-core>=1.0,<2.0
+pydantic>=2.7,<3.0
+streamlit>=1.38,<2.0
+pytest>=8.2,<9.0
+python-dotenv>=1.0,<2.0           # loads .env for local dev -- see llm_provider.py
+
+# LLM providers — install at least one.
+# Ollama is local-only: it is NOT reachable from a deployed container, so a
+# hosted API is required for anything beyond running on your own machine.
+langchain-ollama>=0.2,<0.4        # local dev; needs `ollama serve` on the same host
+langchain-groq>=1.0,<2.0          # GROQ_API_KEY   — fastest, generous free tier
+# langchain-google-genai>=2.0,<3  # GOOGLE_API_KEY — free tier
+# langchain-openai>=0.2,<0.4      # OPENAI_API_KEY — paid
+
+# optional — only needed if the WhatsApp channel is enabled
+# twilio>=9.0,<10.0
