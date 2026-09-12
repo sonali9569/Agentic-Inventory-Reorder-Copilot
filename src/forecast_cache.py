@@ -1,29 +1,11 @@
 """
-Disk cache for fitted per-SKU Prophet models -- the piece that lets the LIVE
-path use a real forecast instead of engine.py's cheap trend proxy, without
-paying Prophet's fit cost on every dashboard load. Before this module, Prophet
-was used only by the backtest (run_backtest.py); nothing outside it ever
-called fit_item_forecast() (see PROJECT_REPORT.md section 10, "Wire the
-forecast into the live loop").
+Disk cache for fitted per-SKU Prophet models, so the live dashboard can use a
+real forecast instead of engine.py's trend proxy without refitting on every
+page load. engine.py and forecast.py remain pure functions with no file I/O;
+this is the one module that reads and writes the cache.
 
-Deliberately outside engine.py and forecast.py's own contract: both of those
-stay pure functions, no file I/O, so they remain trivially testable and safe
-to call from anywhere. This module is the one that touches disk -- same
-reason store.py is the only module that writes state, and llm_cache.py is the
-only module that caches model responses.
-
-NOT COVERED BY THIS SESSION'S TEST RUN. This was written and reviewed without
-a working Prophet/CmdStan install on the machine it was authored on (CmdStan's
-build step failed there for an unrelated reason -- the only available compiler
-is 32-bit-only MinGW, and CmdStan needs -m64). engine.py and graph.py's changes
-ARE verified (170 tests passing, using a plain pd.Series wherever a forecast
-table is needed -- no Prophet dependency in the tested path at all). This file
-is the one new piece that needs verifying against the real library on a machine
-where CmdStan actually builds. Concretely, before trusting it:
-
-    python3 -c "import cmdstanpy; cmdstanpy.install_cmdstan()"   # if not already done
-    python3 src/prefit_forecasts.py                              # should print N SKUs fit, 0 errors
-    python3 -m pytest tests/test_forecast_cache.py -v             # smoke tests, real Prophet, no mocks
+Setup: `python3 -c "import cmdstanpy; cmdstanpy.install_cmdstan()"` once,
+then `python3 src/prefit_forecasts.py` to fit and cache every SKU.
 """
 
 import hashlib

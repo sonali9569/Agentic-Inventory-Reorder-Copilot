@@ -256,14 +256,12 @@ def assess_item(
     for calls that pass the adjusted value back in; nothing here reads from a
     parameter store itself, keeping this function exactly as pure as it's always been.
 
-    forecast_table is optional and stays exactly as pure as everything else here:
-    a pre-computed pd.Series (date-indexed daily demand), not a model to fit or a
-    file to read -- that I/O lives in forecast_cache.py, deliberately outside this
-    module. When given, the reorder point is sized off the summed forecast over
-    the lead-time window instead of the flat mu * lead_time_days assumption
-    reorder_point() makes; when absent (the default, and every existing caller),
-    behaviour is identical to before this parameter existed. See forecast_cache.py
-    for why the forecast itself is a backtest-only feature until now.
+    forecast_table is optional: a pre-computed pd.Series (date-indexed daily
+    demand), not a model to fit or a file to read -- that I/O lives in
+    forecast_cache.py. When given, the reorder point is sized off the summed
+    forecast over the lead-time window instead of the flat mu * lead_time_days
+    assumption reorder_point() makes; when absent, behaviour matches the
+    original function exactly.
     """
     item = items.set_index("item_id").loc[item_id]
     supplier = suppliers.set_index("supplier_id").loc[item.supplier_id]

@@ -1,19 +1,17 @@
 """
-Backtest -- the evidence slide. Four policies, same 45-day held-out window
-(2026-07-18 to 2026-08-31 -- the monsoon uplift on Raincoat/Umbrella lands right
-inside it, deliberately), same true demand, scored on stockout days, fill rate,
-and capital tied up.
+Backtest across four ordering policies on the same 45-day held-out window
+(2026-07-18 to 2026-08-31, which includes the Raincoat/Umbrella monsoon
+uplift), scored on stockout days, fill rate, and capital tied up.
 
-Two reporting decisions worth knowing before reading the output:
+Fill rate is reported two ways: weighted_fill_rate (units served / units
+demanded across the whole store) is the headline figure; sku_mean_fill_rate
+(unweighted average across SKUs) is included for comparison, since it would
+otherwise give a low-volume item the same weight as a high-volume one.
 
-  - Fill rate is reported BOTH ways. weighted_fill_rate is units served divided
-    by units demanded across the whole store; sku_mean_fill_rate is the unweighted
-    average across SKUs. The weighted figure is the headline, because the
-    unweighted one gives an 8-unit gift hamper the same say as 486 units of sugar
-    and flatters any policy that wins on the long tail.
-  - The headline baseline is `seller`, the shop owner's own rule run closed-loop.
-    `actual_replay` -- the open-loop replay of recorded purchase orders -- is kept
-    for reference but is not a fair comparator; see make_seller_heuristic_policy().
+The headline baseline is `seller`, the shop owner's own rule run closed-loop.
+`actual_replay` (an open-loop replay of recorded purchase orders) is kept for
+reference; see make_seller_heuristic_policy() for why it is not the fair
+comparator.
 """
 
 import sys

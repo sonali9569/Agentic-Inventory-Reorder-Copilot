@@ -1,42 +1,26 @@
 """
-The Chatbot. Answers seller questions from what the rest of the system already
-computed -- not a new reasoning surface, and explicitly not a second place
-inventory decisions get made.
+Chatbot for answering seller questions using data already computed elsewhere
+in the system. Does not make inventory decisions.
 
-Which item a message is about is resolved deterministically (resolve_item_id),
-not asked of the model -- that's a lookup, not a judgment call, the same reason
-quantities and item IDs have stayed out of the LLM's hands in every phase so
-far. Once the item is known, one structured LLM call (classify_intent) decides
-whether the message is a question or an explicit command, and for a question,
-answer_question() answers it grounded in the SAME _format_item_facts() the
-Reasoning Agent uses, so the chatbot and the Reasoning Agent can never quietly
-disagree about the same item.
+resolve_item_id() matches a message to a flagged item by comparing its
+identifying words, with fallbacks for a typo (token similarity) or a pronoun
+referring to the last item discussed. classify_intent() then determines
+whether the message is a question or a command.
 
-Questions take one of two paths. When the provider supports tool calling, the
-model is bound to a set of READ-ONLY lookups and chooses which to call -- this is
-the one place in the system where the LLM decides what to do rather than being
-handed a finished facts block. It is the right place for it: a wrong tool call
-here costs a worse answer, while a wrong tool call in the ordering path would cost
-money. Every tool reads; none writes. When the provider has no bind_tools (the
-demo cache, older wrappers), it falls back to the single-call grounded path, which
-answers the same questions about an item the message already names.
+For a question, if the provider supports tool binding, the model is given
+four read-only tools (list_flagged_items, get_item_status, get_item_context,
+get_open_orders) and chooses which to call, within a step limit. A provider
+without tool support falls back to a single grounded call using the same
+computed facts (plain_facts()).
 
-A detected command is returned, never executed. It comes back shaped exactly
-like feedback_agent.submit_feedback()'s arguments, so a caller who decides to
-act on it can pass it straight through -- but that decision, and the actual
-side effect, stays outside this module. Same rule as every earlier phase: the
-LLM proposes, something else decides.
+A detected command (approve/reject/snooze) is returned as a structured
+payload but not executed here; the caller applies it. Reject reasons are read
+from the message text directly, never inferred by the model, since a
+fabricated reason would land in the feedback log and could drive a real
+parameter change.
 
-No retrieval, no embeddings: the whole flagged set plus recent feedback history
-comfortably fits in a prompt at this scale -- a vector index here would be
-complexity with no payoff.
-
-resolve_item_id() is still deterministic, but no longer purely literal: it
-tolerates a typo (whole-token similarity, not substring matching) and resolves
-a pronoun ("what about it now") against last_item_id, the one thing this system
-remembers between turns. That's a deliberately thin notion of memory -- which
-item the conversation was just about, not a transcript -- and it's still not an
-LLM guessing an item_id, just a wider deterministic match.
+No retrieval or embeddings: the flagged set and recent feedback history fit
+comfortably in a single prompt at this scale.
 """
 
 import difflib
@@ -456,26 +440,15 @@ def answer_with_tools(llm, message: str, consumption: dict, context: dict,
     seller asking about a whole aisle at once is out of scope for a budget sized
     for two items, and should fall back rather than spiral.
 
-    seed_tools names zero-argument, side-effect-free tools (list_flagged_items is
-    the only one that qualifies) to call deterministically before the model ever
-    gets a turn, and hand the result to it as context. This exists because a
-    smaller model occasionally answers -- or worse, asks an off-topic clarifying
-    question ("are you asking about news, work, or your personal schedule?") --
-    on the very first turn without calling any tool at all, even though it has
-    been given precisely zero facts to answer from. Two levers were tried and
-    rejected before this one: forcing tool_choice at the API level errors out on
-    this provider/model combination roughly as often as it complies (measured
-    directly: 0/8 successes, all a hard 400 "tool choice is required, but model
-    did not call a tool"), and a plain corrective-nudge retry (see
-    MAX_UNGROUNDED_NUDGES below) cut the failure rate but did not eliminate it.
-    Deterministically pre-fetching the one tool that's always safe to call
-    removes the dependency on the model's first move for exactly the question
-    class that was failing, rather than hoping a retry helps.
-    An ungrounded reply -- one where the model still hasn't called any tool of
-    its own even after a seed -- gets up to MAX_UNGROUNDED_NUDGES corrective
-    retries, still inside the same step budget, before its text is returned
-    as-is. A reply that comes after at least one real tool call (seeded or its
-    own) is trusted immediately and never nudged.
+    seed_tools names zero-argument, side-effect-free tools (list_flagged_items
+    is the only one that qualifies) to call before the model's own turn, so a
+    general question is grounded from the start rather than depending on the
+    model choosing to call a tool on its own.
+
+    An ungrounded reply -- no tool call, from the model or from a seed -- gets
+    up to MAX_UNGROUNDED_NUDGES corrective retries within the same step
+    budget before its text is returned as-is. A reply that follows at least
+    one real tool call is trusted immediately.
     """
     tools = make_tools(consumption, context)
     registry = {t.name: t for t in tools}

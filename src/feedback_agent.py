@@ -1,39 +1,22 @@
 """
-The Feedback Agent. Closes the loop from a seller's approve/reject
-decision back into the per-item parameters engine.py's assess_item() actually
-uses (z, lead_time_buffer_days) -- no LLM anywhere in this file, same discipline
-as every earlier phase.
+Applies a seller's approve/reject decisions to the per-item parameters (z,
+lead_time_buffer_days) that engine.py's assess_item() uses. No LLM, pure
+functions only -- dataframes and dicts in, updated ones out; a driver script
+owns loading/saving feedback_log.csv and the parameter store.
 
-Two guardrails, both deliberate:
-  - hysteresis: a single rejection never moves anything. The SAME reason has to
-    appear in the last CONSISTENCY_THRESHOLD REJECTIONS for this item, with no
-    other reason among them, before a parameter actually adjusts -- a seller
-    flip-flopping between complaints never accidentally accumulates toward a
-    threshold for any one of them.
+Two guardrails:
+  - Hysteresis: a parameter only changes once the same rejection reason
+    appears in an item's last CONSISTENCY_THRESHOLD rejections, with no
+    other reason in between. Approvals do not reset this streak, since an
+    approval is agreement with a different recommendation, not evidence a
+    prior complaint was resolved.
+  - Only "qty_too_high" and "supplier_unreliable" adjust a parameter, since
+    they indicate the underlying math was wrong. "not_needed_now" reflects
+    the seller's own circumstances and is logged but never adjusts anything.
 
-    Read that precisely: the streak is over rejections only. Approvals in between
-    do NOT reset it, so three "qty_too_high" rejections spread across weeks of
-    otherwise-approved recommendations still trip the threshold. That is the
-    intended behaviour -- an approval is agreement with a DIFFERENT
-    recommendation and says nothing about whether this complaint was resolved --
-    but it is not the same thing as three-in-a-row on the calendar, and earlier
-    wording that said "unbroken run" was misleading about it.
-  - not every rejection reason adjusts a parameter at all. "qty_too_high" and
-    "supplier_unreliable" indicate the MATH was wrong, so they earn a parameter
-    nudge once consistent. Note the coupling this creates: z feeds BOTH the
-    order quantity and the reorder point, and classify_risk() compares on_hand
-    against the reorder point. So lowering z on "qty_too_high" also makes the
-    item less likely to be FLAGGED at all, not just cheaper to restock. That is
-    defensible -- a seller who thinks the quantity is too high usually thinks the
-    trigger is too eager as well -- but it is a real second-order effect and
-    should be visible rather than discovered. "not_needed_now" is about the seller's own
-    circumstances (cash flow, unrelated timing), not a miscalibration -- it's
-    logged for visibility but never adjusts anything, so one seller's cash-flow
-    week doesn't quietly warp the reorder math for every future cycle.
-
-Pure functions throughout, same as engine.py and context_agent.py: dataframes
-and dicts in, updated dataframes and dicts out, no file I/O in this module --
-a driver script owns loading/saving feedback_log.csv and the parameter store.
+Note: z feeds both the order quantity and the reorder point used in
+classify_risk(), so lowering z also makes an item less likely to be flagged,
+not just cheaper to restock when it is.
 """
 
 import pandas as pd

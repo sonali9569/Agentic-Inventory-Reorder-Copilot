@@ -1,58 +1,33 @@
 """
-The Reasoning Agent and Orchestrator. The only place an LLM makes a judgement:
-engine.py, context_agent.py and forecast.py are tools the graph calls, never
-decision-makers.
+LangGraph orchestrator that ranks flagged inventory items and generates a
+rationale for each. engine.py, context_agent.py and forecast.py supply data;
+this is the only module that calls an LLM.
 
-Graph shape:
-  START -> gather_signals -> context_extraction -> reasoning -> [route] -> human_approval (interrupt) -> END
+Graph flow:
+  START -> gather_signals -> context_extraction -> reasoning -> [route] -> human_approval -> END
                                                         ^                |
-                                                        +- shrink_batch -+   (grounding failures over limit)
+                                                        +---- shrink_batch ----+
 
-context_extraction is the one node in this graph that gives the LLM something
-gather_signals structurally cannot: it reads free text (a seller's own note --
-a supplier's WhatsApp message, a mention of a local event) that never appears
-in any CSV, and turns it into a structured, Pydantic-validated signal. Everywhere
-else, context comes from context_agent.py, which only reads structured files and
-is pure Python -- this node exists because a real shop owner's context does not
-arrive as a clean CSV row. It costs nothing when unused: with no seller_notes in
-state it returns immediately, no LLM call made. See make_context_extraction_node().
+gather_signals filters and ranks flagged items (no LLM). context_extraction
+parses an optional free-text note from the seller into a structured signal;
+it is a no-op if no note is supplied. reasoning generates a rationale per
+item, checks each one against the supplied facts with a regex-based grounding
+check, and sends surviving rationales to a second LLM call that critiques
+them independently. A rationale that fails either check is replaced with a
+fact-only sentence built from the underlying data.
 
-Inside reasoning, a rationale that survives the regex-based grounding check
-(three known failure classes, see _is_rationale_grounded) goes to a second,
-independent LLM call -- a critic reviewing the writer's own output against the
-same facts, rather than the writer grading itself. The critic's confidence
-replaces the writer's self-reported one: a model grading its own uncertainty is
-a weaker signal than a second call actually checking the claim. See
-_critique_batch(). A critic that disagrees, fails, or isn't available (an older
-test fake, a provider with no real critic behind it) all degrade gracefully --
-to fact-only text on disagreement, to the writer's own number on failure --
-never to a crash.
+If more than a set number of rationales fail grounding in one pass, the graph
+routes back to reasoning with a smaller batch size, up to three attempts,
+before falling back to fact-only text.
 
-The conditional edge is the only place this graph makes a decision about itself.
-When too many of the model's rationales fail the grounding check, it halves the
-prompt batch and re-runs reasoning rather than shipping fact-only text; see
-make_route_after_reasoning() for why batch size is the right lever and for the two
-routes that were considered and rejected as unreachable.
+human_approval pauses the graph with interrupt() and returns the seller's
+decision into state. The dashboard reads this payload directly and applies
+each decision through feedback_agent.submit_feedback(), since approval is
+per item while the interrupt covers the whole batch.
 
-The graph halts at human_approval and hands the ranked list to whatever is driving
-it. Resume works -- Command(resume=...) returns the decision into state, and
-test_graph.py exercises it -- but the DASHBOARD does not use it, deliberately.
-interrupt() here is a single batch-level pause covering the whole list, while the
-seller decides per item; approving one recommendation and rejecting another is not
-one resume value. The dashboard therefore reads the interrupt payload and applies
-each decision through feedback_agent.submit_feedback() directly.
-
-An earlier version carried an apply_decision node after human_approval that
-returned {} and did nothing at all. It is gone. If per-item resume is ever wanted,
-the honest shape is one interrupt per item, not a node bolted onto this one.
-
-Two rules carried over from every earlier phase, enforced structurally here:
-  - the LLM never computes a quantity. assess_item() already computed
-    suggested_order_qty; the reasoning node's job is to rank and explain, and the
-    merge step below pulls the quantity back from the deterministic facts by
-    item_id lookup, never from the model's own output.
-  - a hallucinated item_id (one the model invents that wasn't in the input) is
-    silently dropped, not trusted.
+Two invariants hold throughout: order quantities always come from
+assess_item()'s deterministic output, never from the model, and any item_id
+not present in the input batch is dropped rather than trusted.
 """
 
 import re
@@ -220,10 +195,9 @@ def make_context_extraction_node(llm):
     Turns a seller's free-text note into a structured signal, validated by
     Pydantic, and merges it into context_signals for one item -- never into
     consumption_signals, so it can enrich a rationale but can never touch a
-    quantity. Deliberately scoped to festival/promotion signals only, not
-    supplier claims: _is_rationale_grounded() hard-bans any supplier language
-    regardless of source (see its docstring), and carving an exception into that
-    invariant for one entry point would weaken it everywhere else.
+    quantity. Scoped to festival/promotion signals only, not supplier claims,
+    since _is_rationale_grounded() bans any supplier language regardless of
+    source.
 
     Same failure mode as everywhere an LLM output meets state here: a
     hallucinated item_id, a signal_type of "none", or confidence below threshold
@@ -596,25 +570,17 @@ MAX_REASONING_ATTEMPTS = 3
 def make_route_after_reasoning(failure_limit: int = GROUNDING_FAILURE_LIMIT,
                                 max_attempts: int = MAX_REASONING_ATTEMPTS):
     """
-    The one conditional edge in this graph, and the reason it exists is a failure
-    that was actually observed rather than one imagined for the diagram: given
-    eighteen items in a single prompt, a smaller model pastes a festival name from
-    one item's facts onto another's. _is_rationale_grounded() already catches each
-    instance and swaps in a fact-only sentence, so nothing wrong ever reaches the
-    seller -- but a run where several rationales had to be discarded has quietly
-    lost most of the value the model was there to add.
+    The one conditional edge in this graph. With many items in a single prompt,
+    a smaller model can paste a festival name from one item's facts onto
+    another's; _is_rationale_grounded() catches each instance and swaps in a
+    fact-only sentence, but a run with several failures loses most of the
+    value the model was there to add.
 
-    Batch size is the lever. The contamination is a function of how many items'
-    facts sit in one context, so on a bad pass this routes BACK into reasoning with
-    the batch halved, trading one extra call for rationales that survive the check.
-    Bounded at max_attempts so a genuinely confused model degrades to fact-only
+    Batch size is the lever: contamination scales with how many items' facts
+    share one context, so a bad pass routes back into reasoning with the
+    batch halved, trading one extra call for rationales that survive the
+    check. Bounded at max_attempts so a confused model degrades to fact-only
     text instead of looping.
-
-    Two branches that were considered and deliberately left out: skipping the model
-    when nothing is flagged, and skipping it when every flagged item is already on
-    order. Both are defensible in principle and neither fires even once across forty
-    sampled business dates on this dataset -- with 25 SKUs something is always
-    flagged, and never all covered. Routing that cannot trigger is decoration.
     """
     def route_after_reasoning(state: SellerSenseState) -> str:
         if state.get("grounding_failures", 0) < failure_limit:
